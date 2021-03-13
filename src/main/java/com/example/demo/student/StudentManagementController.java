@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -23,11 +24,13 @@ public class StudentManagementController {
 			);
 	
 	@GetMapping
+	@PreAuthorize("hasAnyRole('ROLE_ADMIN', 'ROLE_ADMINTRAINEE')")
 	public List<Student> getAllStudents(){
 		return STUDENTS;
 	}
 	
 	@PostMapping
+	@PreAuthorize("hasAuthority('student:write')")
 	public void registerNewStudent(@RequestBody Student student) {
 		List<Student> copyStudents = new ArrayList<>(STUDENTS);
 		copyStudents.add(student);
@@ -36,6 +39,7 @@ public class StudentManagementController {
 	}
 	
 	@DeleteMapping(path = "{studentId}")
+	@PreAuthorize("hasAuthority('student:write')")
 	public void deleteStudent(@PathVariable("studentId") Integer studentId) {
 		List<Student> copyStudents = new ArrayList<>(STUDENTS);
 		copyStudents.removeIf(student -> student.getStudentId() == studentId);
@@ -44,6 +48,7 @@ public class StudentManagementController {
 	}
 	
 	@PutMapping(path = "{studentId}")
+	@PreAuthorize("hasAuthority('student:write')")
 	public void updateStudent(@PathVariable("studentId") Integer studentId, @RequestBody Student student) {
 		List<Student> copyStudents = new ArrayList<>(STUDENTS);
 		copyStudents.removeIf(st -> st.getStudentId() == studentId);
