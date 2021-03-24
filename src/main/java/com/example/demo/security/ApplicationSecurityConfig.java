@@ -6,24 +6,27 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.crypto.password.NoOpPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.provisioning.InMemoryUserDetailsManager;
+
+import com.example.demo.auth.ApplicationUserService;
 
 @Configuration
 @EnableWebSecurity
 public class ApplicationSecurityConfig extends WebSecurityConfigurerAdapter{
 	
 	private final PasswordEncoder passwordEncoder;
+	private final ApplicationUserService applicationUserService;
 	
 	@Autowired
-	public ApplicationSecurityConfig(PasswordEncoder passwordEncoder) {
+	public ApplicationSecurityConfig(PasswordEncoder passwordEncoder, ApplicationUserService applicationUserService) {
 		this.passwordEncoder = passwordEncoder;
+		this.applicationUserService = applicationUserService;
 	}
 	
 	@Override
@@ -58,31 +61,16 @@ public class ApplicationSecurityConfig extends WebSecurityConfigurerAdapter{
 					.deleteCookies("JSESSIONID", "remember-me")
 					.logoutSuccessUrl("/login");
 	}
-
+	
 	@Override
-	@Bean
-	protected UserDetailsService userDetailsService() {
-		UserDetails anna = User.builder()
-			.username("annasmith")
-			.password(passwordEncoder.encode("password"))
-			//.roles(ApplicationUserRole.STUDENT.name())
-			.authorities(ApplicationUserRole.STUDENT.getGrantedAuthorities())
-			.build();
-		
-		UserDetails linda = User.builder()
-				.username("linda")
-				.password(passwordEncoder.encode("password"))
-				//.roles(ApplicationUserRole.ADMIN.name())
-				.authorities(ApplicationUserRole.ADMIN.getGrantedAuthorities())
-				.build();
-		
-		UserDetails tom = User.builder()
-				.username("tom")
-				.password(passwordEncoder.encode("password"))
-				//.roles(ApplicationUserRole.ADMINTRAINEE.name())
-				.authorities(ApplicationUserRole.ADMINTRAINEE.getGrantedAuthorities())
-				.build();
-		
-		return new InMemoryUserDetailsManager(anna, linda, tom);
+	protected void configure(AuthenticationManagerBuilder auth) throws Exception {
+		auth.authenticationProvider(daoAuthenticationProvider());
+	}
+
+	public DaoAuthenticationProvider daoAuthenticationProvider() {
+		DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
+		provider.setPasswordEncoder(NoOpPasswordEncoder.getInstance());
+		provider.setUserDetailsService(applicationUserService);
+		return provider;
 	}
 }
